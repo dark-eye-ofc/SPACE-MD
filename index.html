@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPACE-MD | PRODEV PANEL</title>
+<style>
+body{margin:0;background:#050505;color:#fff;font-family:system-ui;text-align:center}
+.top{background:linear-gradient(135deg,#7c3aed,#000);padding:25px}
+.card{background:#101010;border:1px solid #222;border-radius:18px;padding:18px;margin:14px auto;max-width:430px}
+input{width:88%;padding:14px;border-radius:12px;border:1px solid #333;background:#000;color:#fff;margin:8px 0;font-size:15px}
+.btn{width:90%;padding:13px;border:none;border-radius:12px;font-weight:800;cursor:pointer;margin:7px 0;font-size:15px}
+.pair{background:#7c3aed;color:#fff}
+.copy{background:#00ff88;color:#000;display:none}
+.qrBtn{background:#fff;color:#000}
+.create{background:linear-gradient(90deg,#7c3aed,#00ff88);color:#000}
+.support{background:#111;border:1px solid #333;color:#fff}
+.codeBox{font-size:34px;letter-spacing:6px;color:#00ff88;margin:14px 0;font-weight:900;display:none}
+.qrImg{margin:15px auto;max-width:250px;display:none;border:5px solid #fff;border-radius:12px}
+.small{color:#888;font-size:12px}
+.divider{height:1px;background:#222;margin:15px 0}
+</style>
+</head>
+<body>
+
+<div class="top">
+<h1>SPACE-MD</h1>
+<p>PRODEV TECH OFFICIAL PANEL</p>
+</div>
+
+<!-- PAIR CODE -->
+<div class="card">
+<h3>🔗 Link with Pair Code</h3>
+<input id="num1" placeholder="Enter WhatsApp number > eg 263XXXXXXXXX" />
+<button class="btn pair" onclick="requestPair()">Request Pair Code</button>
+<div id="pairCodeDisplay" class="codeBox">---- ----</div>
+<button id="copyPairBtn" class="btn copy" onclick="copyPair()">Copy code</button>
+<p class="small">Go to WhatsApp > Linked Devices > Link with phone number > Paste code</p>
+</div>
+
+<!-- QR CODE -->
+<div class="card">
+<h3>📷 Link with QR</h3>
+<input id="num2" placeholder="Enter WhatsApp number > eg 263XXXXXXXXX" />
+<button class="btn qrBtn" onclick="requestQR()">Request QR Terminal</button>
+<img id="qrImage" class="qrImg" src="" />
+<button id="saveQrBtn" class="btn copy" onclick="saveQr()">Save QR to save it as image</button>
+<p class="small">Scan QR within 45 seconds</p>
+</div>
+
+<div class="divider"></div>
+
+<!-- ACCOUNT + PANEL -->
+<div class="card">
+<h3>👤 Panel Access</h3>
+<input id="accNum" placeholder="Enter your number > 263XXXXXXXXX" />
+<button class="btn create" onclick="createAccount()">Create account ✨</button>
+<p class="small" id="accStatus">We create random 6 chars password and send it to your WhatsApp. You enter that code on panel password then click create...</p>
+<input id="accPass" placeholder="Enter password received on WhatsApp" style="display:none" />
+<button id="openPanelBtn" class="btn pair" style="display:none" onclick="openPanel()">Open Bot Panel</button>
+</div>
+
+<div class="card">
+<button class="btn support" onclick="window.open('https://support-black-eight.vercel.app','_blank')">💬 Support Button</button>
+<button class="btn support" onclick="window.open('https://space-md-nrvd.onrender.com','_blank')">🌐 Check Bot Status</button>
+</div>
+
+<script>
+const RENDER_LINK = "https://space-md-nrvd.onrender.com";
+let currentPairCode = "";
+
+async function requestPair(){
+  const n = document.getElementById('num1').value.replace(/[^0-9]/g,'');
+  if(!n) return alert("Enter number");
+  document.getElementById('pairCodeDisplay').style.display='block';
+  document.getElementById('pairCodeDisplay').innerText='GENERATING...';
+  document.getElementById('copyPairBtn').style.display='none';
+  try{
+    // FIXED: Using your Render link directly
+    const res = await fetch(`${RENDER_LINK}/code?number=${n}`);
+    const data = await res.json();
+    currentPairCode = data.code || data.paircode || data.pair_code || JSON.stringify(data);
+    document.getElementById('pairCodeDisplay').innerText = currentPairCode;
+    document.getElementById('copyPairBtn').style.display='block';
+  }catch(e){
+    document.getElementById('pairCodeDisplay').innerText = 'ERROR - Check Render logs';
+    console.log(e);
+  }
+}
+function copyPair(){
+  navigator.clipboard.writeText(currentPairCode);
+  alert("Copied: " + currentPairCode);
+}
+
+async function requestQR(){
+  const n = document.getElementById('num2').value.replace(/[^0-9]/g,'');
+  if(!n) return alert("Enter number");
+  try{
+    // FIXED: Using your Render link for QR
+    const res = await fetch(`${RENDER_LINK}/qr?number=${n}`);
+    const data = await res.json();
+    const qr = data.qr || data.qrCode || data.url;
+    if(qr && qr.startsWith('data:')){
+        document.getElementById('qrImage').src = qr;
+    } else {
+        // If backend returns base64, convert
+        document.getElementById('qrImage').src = qr;
+    }
+    document.getElementById('qrImage').style.display='block';
+    document.getElementById('saveQrBtn').style.display='block';
+  }catch(e){
+    // Fallback: some SPACE-MD bots use /qr as image directly
+    document.getElementById('qrImage').src = `${RENDER_LINK}/qr?number=${n}`;
+    document.getElementById('qrImage').style.display='block';
+    document.getElementById('saveQrBtn').style.display='block';
+  }
+}
+function saveQr(){
+  const img = document.getElementById('qrImage').src;
+  const a = document.createElement('a');
+  a.href = img; a.download = "SPACE-MD-QR.png"; a.click();
+}
+
+function genPass(){ return Math.random().toString(36).slice(2,8).toUpperCase(); }
+
+async function createAccount(){
+  const num = document.getElementById('accNum').value.replace(/[^0-9]/g,'');
+  if(!num) return alert("Enter number");
+  const pass = genPass();
+  document.getElementById('accStatus').innerText = "Creating account... sending password to WhatsApp via bot...";
+  
+  try{
+    await fetch(`${RENDER_LINK}/create-account?number=${num}&password=${pass}`);
+  }catch{}
+
+  document.getElementById('accStatus').innerText = `Password sent to ${num} via SPACE-MD bot! Password: ${pass}. Enter it below.`;
+  document.getElementById('accPass').style.display='block';
+  document.getElementById('openPanelBtn').style.display='block';
+  localStorage.setItem('space_temp_pass', pass);
+  localStorage.setItem('space_temp_num', num);
+}
+function openPanel(){
+  const entered = document.getElementById('accPass').value.toUpperCase();
+  const real = localStorage.getItem('space_temp_pass');
+  if(entered !== real) return alert("Wrong password! Check WhatsApp");
+  window.location.href = "/panel.html?user=" + localStorage.getItem('space_temp_num');
+}
+</script>
+</body>
+</html>
